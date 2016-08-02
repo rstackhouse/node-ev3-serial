@@ -1,0 +1,4 @@
+{
+  "glob": ["commandBuilder.js", "encoding/*.js", "operations/*.js"],
+  "github": false
+}

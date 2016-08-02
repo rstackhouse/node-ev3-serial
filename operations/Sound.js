@@ -1,19 +1,17 @@
-/*
-Instruction
-Opcode Arguments Dispatch status Description
-opSound (CMD, ...)
-0x94
-(Data8) CMD => Specific command parameter documented below Unchanged
-Sound control entry
-    CMD: BREAK = 0x00 (Stop current sound playback)
-    CMD: TONE = 0x01 Arguments
-        (Data8) VOLUME – Specify volume for playback, [0 - 100] (Data16) FREQUENCY – Specify frequency, [250 - 10000] (Data16) DURATION – Specify duration in millisecond
-    CMD: PLAY = 0x02 Arguments
-        (Data8) VOLUME – Specify volume for playback, [0 - 100] (Data8) NAME – First character in filename (Character string)
-    CMD: REPEAT = 0x03 Arguments
-        (Data8) VOLUME – Specify volume for playback, [0 - 100] (Data8) NAME – First character in filename (Character string)
-*/
+"use strict";
 
+var OP_SOUND = 0x94;
+var BREAK = 0,
+    TONE = 1,
+    PLAY = 2,
+    REPEAT = 3,
+    SERVICE = 4;
+
+var encoding = require('../encoding');
+
+/* # opSound (0x94)
+Object used to represent a sound operation for sending to an EV3 as a direct command.
+*/
 class Sound {
     constructor () {
         this.command = null;
@@ -21,14 +19,14 @@ class Sound {
 
     tone () {
         this.command = new Tone(this);
-        return this.tone;
+        return this.command;
     }
 
     toBuffer(cmdBuf) {
         if (cmdBuf) {
-            var buf = new Buffer();
-            buf.writeUint8(OP_SOUND);
-            return buf.concat(cmdBuf);
+            var buf = new Buffer(1);
+            buf.writeUInt8(OP_SOUND);
+            return Buffer.concat([buf,cmdBuf]);
         }
         else {
             return this.command.toBuffer();
@@ -36,22 +34,53 @@ class Sound {
     }
 }
 
+/* ## TONE (0x01)
+Object used to represent a tone command.
+
+Takes 3 parameters:
+*/
 class Tone {
     constructor (op) {
-        this.op = op;
-        this.volume = null;
-        this.frequency = null;
-        this.duration = null;
+        this._op = op;
+        this._volume = 0;
+        this._frequency = 0;
+        this._duration = 0;
     }
 
-    /* Convenience Method that allows chaining */
     toBuffer() {
-        var buf = new Buffer();
+        var buf = new Buffer(9);
 
-        // append values for volume, frequency, and duration here
+        encoding.packConstantShortFormat(buf,TONE);
+        encoding.packConstantOneByteLongFormat(buf, this._volume, 1);
+        encoding.packConstantTwoByteLongFormat(buf, this._frequency, 3);
+        encoding.packConstantTwoByteLongFormat(buf, this._duration, 6);
 
-        return this.op.toBuffer(buf);
+        return this._op.toBuffer(buf);
+    }
+
+/* 
+* Volume: Range 0-100. Expressed as one control byte followed by a byte constant.
+*/
+    volume(v) {
+        this._volume = v;
+        return this;
+    }
+
+/*
+* Frequency: Range 250-10000. Expressed as one control byte followed by a two byte constant.
+*/
+    frequency(f) {
+        this._frequency = f;
+        return this;
+    }
+
+/*
+* Duration: A time interval in milliseconds. Expressed as one control byte followed by a two byte constant.
+*/
+    duration(d) {
+        this._duration = d;
+        return this;
     }
 }
 
-exports.Sound = Sound;
+module.exports = Sound;

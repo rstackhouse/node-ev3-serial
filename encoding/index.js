@@ -1,5 +1,7 @@
 var LONG_FORMAT = 0x80;
 var ONE_BYTE_FOLLOWING = 0x01;
+var TWO_BYTES_FOLLOWING = 0x02;
+var FOUR_BYTES_FOLLOWING = 0x04;
 var SHORT_FORMAT_MAX = 0x1F;
 var ONE_BYTE_LONG_FORMAT_MAX = 0xFF;
 var TWO_BYTE_LONG_FORMAT_MAX = 0xFFFF;
@@ -49,14 +51,15 @@ exports.packConstantTwoByteLongFormat = function(buf, c, offset) {
     }
 
     if (buf.length - offset < 3) {
+        console.log('buf.length: ' + buf.length + ' offset: ' + offset);
         throw new Error(offset > 0 ? 'Buffer length insufficient from offset.' : 'Buffer length insufficient.');
     }
 
-    buf.writeUInt8(LONG_FORMAT | ONE_BYTE_FOLLOWING, offset);
+    buf.writeUInt8(LONG_FORMAT | TWO_BYTES_FOLLOWING, offset);
     buf.writeUInt16LE(c, offset + 1);
 };
 
-exports.packConstantTwoByteLongFormat = function(buf, c, offset) {
+exports.packConstantFourByteLongFormat = function(buf, c, offset) {
     if (c > FOUR_BYTE_LONG_FORMAT_MAX) {
         throw new Error('Parameter exceeds what can be represented by four bytes. Try packing as string constant instead.');
     }
@@ -69,6 +72,6 @@ exports.packConstantTwoByteLongFormat = function(buf, c, offset) {
         throw new Error(offset > 0 ? 'Buffer length insufficient from offset.' : 'Buffer length insufficient.');
     }
 
-    buf.writeUInt8(LONG_FORMAT | ONE_BYTE_FOLLOWING, offset);
+    buf.writeUInt8(LONG_FORMAT | FOUR_BYTES_FOLLOWING, offset);
     buf.writeUInt32LE(c, offset + 1);
 };
